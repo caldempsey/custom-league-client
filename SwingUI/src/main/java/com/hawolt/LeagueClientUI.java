@@ -17,6 +17,7 @@ import com.hawolt.ui.layout.LayoutManager;
 import com.hawolt.ui.login.ILoginCallback;
 import com.hawolt.ui.login.LoginUI;
 import com.hawolt.util.panel.ChildUIComponent;
+import com.hawolt.virtual.leagueclient.exception.LeagueException;
 import com.hawolt.virtual.leagueclient.userinfo.UserInformation;
 import com.hawolt.virtual.riotclient.instance.MultiFactorSupplier;
 import com.hawolt.xmpp.core.VirtualRiotXMPPClient;
@@ -28,6 +29,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowStateListener;
+import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -123,7 +125,7 @@ public class LeagueClientUI extends JFrame implements IClientCallback, ILoginCal
     }
 
     @Override
-    public void onLogin(String username, String password) {
+    public void onLogin(String username, String password) throws LeagueException, IOException {
         JFrame parent = this;
         ClientConfiguration configuration = ClientConfiguration.getDefault(username, password, new MultiFactorSupplier() {
             @Override

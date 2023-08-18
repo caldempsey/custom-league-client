@@ -1,14 +1,16 @@
 package com.hawolt.ui.login;
 
 import com.hawolt.LeagueClientUI;
+import com.hawolt.logger.Logger;
 import com.hawolt.ui.impl.JHintTextField;
 import com.hawolt.util.panel.MainUIComponent;
+import com.hawolt.virtual.leagueclient.exception.LeagueException;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
+import java.io.IOException;
 
 /**
  * Created: 06/08/2023 13:10
@@ -18,10 +20,11 @@ import java.awt.event.ActionListener;
 public class LoginUI extends MainUIComponent implements ActionListener {
     private final JHintTextField username;
     private final JPasswordField password;
+    private final JButton login;
     private final ILoginCallback callback;
 
     public static void show(LeagueClientUI leagueClientUI) {
-        LoginUI loginUI = new LoginUI(leagueClientUI);
+        new LoginUI(leagueClientUI);
     }
 
     private LoginUI(LeagueClientUI clientUI) {
@@ -31,17 +34,14 @@ public class LoginUI extends MainUIComponent implements ActionListener {
 
         JLabel usernameLabel = new JLabel("Username");
         this.add(usernameLabel);
-
         this.add(username = new JHintTextField(""));
 
         JLabel passwordLabel = new JLabel("Password");
         this.add(passwordLabel);
-
         this.add(password = new JPasswordField());
 
-        JButton login = new JButton("Login");
+        this.add(login = new JButton("Login"));
         login.addActionListener(this);
-        this.add(login);
 
         this.setPreferredSize(new Dimension(300, 150));
         this.container.add(this);
@@ -50,15 +50,50 @@ public class LoginUI extends MainUIComponent implements ActionListener {
         usernameLabel.setLabelFor(username);
         passwordLabel.setLabelFor(password);
 
+        // Enter hook so users can login with enter
+        KeyAdapter enterKeyAdapter = new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    submitLogin();
+                }
+            }
+        };
+
+        username.addKeyListener(enterKeyAdapter);
+        password.addKeyListener(enterKeyAdapter);
+
         this.callback = clientUI;
         this.init();
     }
 
+    private void submitLogin() {
+        String user = this.username.getText();
+        String pass = new String(this.password.getPassword());
+        login.setText("Logging in...");
+        login.getModel().setPressed(true);
+        login.update(login.getGraphics());
+
+        try {
+            callback.onLogin(user, pass);
+        } catch (Exception e) {
+            // Check for specific message indicating rate limiting
+            if (e.getMessage().contains("RATE_LIMITED")) {
+                login.setText("You are being rate limited, try again later...");
+            } else {
+                login.setText("Login");
+            }
+            login.getModel().setPressed(false);
+            login.update(login.getGraphics());
+            Logger.error(e);
+            Logger.fatal(e);
+        }
+    }
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        String username = this.username.getText();
-        String password = new String(this.password.getPassword());
-        callback.onLogin(username, password);
+        if (e.getSource() == login) {
+            submitLogin();
+        }
     }
 }

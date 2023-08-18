@@ -24,7 +24,7 @@ public class RiotClient implements BiConsumer<VirtualLeagueClient, Throwable> {
     private final ClientConfiguration configuration;
     private final IClientCallback callback;
 
-    public RiotClient(ClientConfiguration configuration, IClientCallback callback) {
+    public RiotClient(ClientConfiguration configuration, IClientCallback callback) throws LeagueException, IOException {
         this.configuration = configuration;
         this.callback = callback;
         this.loginAndCreate();
@@ -54,17 +54,13 @@ public class RiotClient implements BiConsumer<VirtualLeagueClient, Throwable> {
         if (configuration.getComplete()) client.setRTMP(RTMPHandler.build(client).connect());
     }
 
-    private void loginAndCreate() {
+    private void loginAndCreate() throws LeagueException, IOException {
         VirtualRiotClientInstance virtualRiotClientInstance = VirtualRiotClientInstance.create(
                 configuration.getGateway(),
                 configuration.getCookieSupplier(),
                 false
         );
-        try {
-            login(configuration, virtualRiotClientInstance);
-        } catch (IOException | LeagueException e) {
-            callback.onError(e);
-        }
+        login(configuration, virtualRiotClientInstance);
     }
 
     private void login(ClientConfiguration configuration, VirtualRiotClientInstance virtualRiotClientInstance) throws IOException, LeagueException {
