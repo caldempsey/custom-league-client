@@ -88,6 +88,9 @@ public class LoginUI extends MainUIComponent implements ActionListener {
             login.getModel().setPressed(false);
             login.update(login.getGraphics());
             Logger.error(e);
+            // Why: Flow to recover the League login client is calling Logger.fatal(e). 
+            // Removing this line will cause the login flow to re-try its prior state e.g. authorization endlessly.
+            // This may result in you being rate limited.
             Logger.fatal(e);
         }
     }
