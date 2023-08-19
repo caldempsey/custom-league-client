@@ -118,7 +118,7 @@ public class ClientConfiguration {
             return new Builder()
                     .setSupplier(new LocalCookieSupplier())
                     .setMultifactorSupplier(multifactor)
-                    .setIgnoreSummoner(true)
+                    .setIgnoreSummoner(false)
                     .setUsername(username)
                     .setPassword(password)
                     .setSelfRefresh(true)
