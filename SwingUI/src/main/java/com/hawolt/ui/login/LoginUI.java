@@ -1,16 +1,16 @@
 package com.hawolt.ui.login;
 
 import com.hawolt.LeagueClientUI;
-import com.hawolt.logger.Logger;
 import com.hawolt.ui.impl.JHintTextField;
 import com.hawolt.util.panel.MainUIComponent;
-import com.hawolt.virtual.leagueclient.exception.LeagueException;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.awt.event.*;
-import java.io.IOException;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 
 /**
  * Created: 06/08/2023 13:10
@@ -20,11 +20,11 @@ import java.io.IOException;
 public class LoginUI extends MainUIComponent implements ActionListener {
     private final JHintTextField username;
     private final JPasswordField password;
-    private final JButton login;
     private final ILoginCallback callback;
+    private final JButton button;
 
-    public static void show(LeagueClientUI leagueClientUI) {
-        new LoginUI(leagueClientUI);
+    public static LoginUI show(LeagueClientUI leagueClientUI) {
+        return new LoginUI(leagueClientUI);
     }
 
     private LoginUI(LeagueClientUI clientUI) {
@@ -40,8 +40,9 @@ public class LoginUI extends MainUIComponent implements ActionListener {
         this.add(passwordLabel);
         this.add(password = new JPasswordField());
 
-        this.add(login = new JButton("Login"));
-        login.addActionListener(this);
+        button = new JButton("Login");
+        button.addActionListener(this);
+        this.add(button);
 
         this.setPreferredSize(new Dimension(300, 150));
         this.container.add(this);
@@ -54,9 +55,8 @@ public class LoginUI extends MainUIComponent implements ActionListener {
         KeyAdapter enterKeyAdapter = new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
-                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-                    submitLogin();
-                }
+                if (e.getKeyCode() != KeyEvent.VK_ENTER) return;
+                actionPerformed(null);
             }
         };
 
@@ -67,38 +67,19 @@ public class LoginUI extends MainUIComponent implements ActionListener {
         this.init();
     }
 
-    private void submitLogin() {
-        String user = this.username.getText();
-        String pass = new String(this.password.getPassword());
-        login.setText("Logging in...");
-        login.getModel().setPressed(true);
-        login.update(login.getGraphics());
-
-        try {
-            callback.onLogin(user, pass);
-            login.setText("Success! Please be patient...");
-            login.update(login.getGraphics());
-        } catch (Exception e) {
-            // Check for specific message indicating rate limiting
-            if (e.getMessage().contains("RATE_LIMITED")) {
-                login.setText("You are being rate limited, try again later...");
-            } else {
-                login.setText("Login");
-            }
-            login.getModel().setPressed(false);
-            login.update(login.getGraphics());
-            Logger.error(e);
-            // Why: Flow to recover the League login client is calling Logger.fatal(e). 
-            // Removing this line will cause the login flow to re-try its prior state e.g. authorization endlessly.
-            // This may result in you being rate limited.
-            Logger.fatal(e);
-        }
+    public void toggle(boolean state) {
+        username.setEnabled(state);
+        password.setEnabled(state);
+        button.setEnabled(state);
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == login) {
-            submitLogin();
-        }
+        toggle(false);
+        String username = this.username.getText();
+        String password = new String(this.password.getPassword());
+        LeagueClientUI.service.execute(() -> {
+            callback.onLogin(username, password);
+        });
     }
 }

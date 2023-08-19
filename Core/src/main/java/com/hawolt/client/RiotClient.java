@@ -24,7 +24,7 @@ public class RiotClient implements BiConsumer<VirtualLeagueClient, Throwable> {
     private final ClientConfiguration configuration;
     private final IClientCallback callback;
 
-    public RiotClient(ClientConfiguration configuration, IClientCallback callback) throws LeagueException, IOException {
+    public RiotClient(ClientConfiguration configuration, IClientCallback callback) {
         this.configuration = configuration;
         this.callback = callback;
         this.loginAndCreate();
@@ -36,14 +36,14 @@ public class RiotClient implements BiConsumer<VirtualLeagueClient, Throwable> {
 
     @Override
     public void accept(VirtualLeagueClient virtualLeagueClient, Throwable throwable) {
-        if (throwable != null) callback.onError(throwable);
+        if (throwable != null) callback.onLoginFlowException(throwable);
         else {
             LeagueClient client = new LeagueClient(virtualLeagueClient);
             try {
                 finalize(client);
                 callback.onClient(client);
             } catch (IOException | URISyntaxException e) {
-                callback.onError(e);
+                callback.onLoginFlowException(e);
             }
         }
     }
@@ -54,13 +54,17 @@ public class RiotClient implements BiConsumer<VirtualLeagueClient, Throwable> {
         if (configuration.getComplete()) client.setRTMP(RTMPHandler.build(client).connect());
     }
 
-    private void loginAndCreate() throws LeagueException, IOException {
+    private void loginAndCreate() {
         VirtualRiotClientInstance virtualRiotClientInstance = VirtualRiotClientInstance.create(
                 configuration.getGateway(),
                 configuration.getCookieSupplier(),
                 false
         );
-        login(configuration, virtualRiotClientInstance);
+        try {
+            login(configuration, virtualRiotClientInstance);
+        } catch (IOException | LeagueException e) {
+            callback.onLoginFlowException(e);
+        }
     }
 
     private void login(ClientConfiguration configuration, VirtualRiotClientInstance virtualRiotClientInstance) throws IOException, LeagueException {

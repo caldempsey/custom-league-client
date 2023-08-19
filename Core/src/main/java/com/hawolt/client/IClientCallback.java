@@ -8,5 +8,5 @@ package com.hawolt.client;
 public interface IClientCallback {
     void onClient(LeagueClient client);
 
-    void onError(Throwable throwable);
+    void onLoginFlowException(Throwable throwable);
 }
