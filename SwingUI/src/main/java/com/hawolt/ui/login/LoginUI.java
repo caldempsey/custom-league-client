@@ -76,6 +76,8 @@ public class LoginUI extends MainUIComponent implements ActionListener {
 
         try {
             callback.onLogin(user, pass);
+            login.setText("Success! Please be patient...");
+            login.update(login.getGraphics());
         } catch (Exception e) {
             // Check for specific message indicating rate limiting
             if (e.getMessage().contains("RATE_LIMITED")) {
